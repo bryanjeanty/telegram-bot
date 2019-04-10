@@ -1,25 +1,41 @@
 const functions = require("firebase-functions");
 const Telegraf = require("telegraf");
 const apixu = require("apixu");
+
+const config =
+  Object.keys(functions.config()).length === 0
+    ? process.env
+    : functions.config().service;
+
 const apixuClient = new apixu.Apixu({
-  apikey: process.env.APIXU_KEY
+  apikey: config.apixu_key
 });
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT);
+const bot = new Telegraf(config.telegram_key);
 bot.start(ctx => ctx.reply("Welcome"));
-bot.help(ctx => ctx.reply("Send me a sticker"));
-bot.on("sticker", ctx => ctx.reply("👍"));
 bot.hears("hi", ctx => ctx.reply("Hey there"));
+bot.on("text", ctx => {
+  let query = ctx.update.message.text;
+
+  apixuClient
+    .current(query)
+    .then(current => {
+      return ctx.reply(
+        `The current weather in ${query} is Celsius: ${current.current.temp_c}
+            Farenheit: ${current.current.temp_f}`
+      );
+    })
+    .catch(error => {
+      return ctx.reply(`This city does not exist`, error);
+    });
+});
 bot.launch();
 
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-exports.helloWorld = functions.https.onRequest((request, response) => {
-  apixuClient
-    .current("London")
-    .then(current => {
-      response.send(current);
-    })
-    .catch(error => console.error("error", error));
-});
+// exports.helloWorld = functions.https.onRequest((request, response) => {
+//   apixuClient
+//     .current("London")
+//     .then(current => {
+//       response.send(current);
+//     })
+//     .catch(error => console.error("error", error));
+// });
