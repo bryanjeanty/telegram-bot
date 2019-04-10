@@ -2,10 +2,16 @@ const functions = require("firebase-functions");
 const Telegraf = require("telegraf");
 const apixu = require("apixu");
 
-const config =
-  Object.keys(functions.config()).length === 0
-    ? process.env
-    : functions.config().service;
+let config = require("./env.json").service;
+
+// config =
+//   Object.keys(functions.config()).length === 0
+//     ? process.env
+//     : functions.config().service;
+
+if (Object.keys(functions.config()).length) {
+  config = functions.config().service;
+}
 
 const apixuClient = new apixu.Apixu({
   apikey: config.apixu_key
@@ -31,11 +37,11 @@ bot.on("text", ctx => {
 });
 bot.launch();
 
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//   apixuClient
-//     .current("London")
-//     .then(current => {
-//       response.send(current);
-//     })
-//     .catch(error => console.error("error", error));
-// });
+exports.helloWorld = functions.https.onRequest((request, response) => {
+  apixuClient
+    .current("London")
+    .then(current => {
+      return response.send(current);
+    })
+    .catch(error => console.error("error", error));
+});
